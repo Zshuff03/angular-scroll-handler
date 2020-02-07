@@ -4,13 +4,15 @@ import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 
 export class ScrollProperties {
-  beforeCheckFunc: Function;
-  checkPassedFunc: Function;
+  beforeCheckFunc: () => void;
+  checkPassedFunc: () => void;
   element: any;
+  scrollTriggerPercentage: number;
 }
 
 @Injectable({
   providedIn: 'root',
+  useFactory: () => new ScrollService(),
 })
 
 /**
@@ -28,7 +30,7 @@ export class ScrollProperties {
 export class ScrollService  {
 
   scroll: Subject<string> = new Subject<string>();
-  handlerList:  Map<string, ScrollProperties> = new Map<string, ScrollProperties>();
+  handlerList: Map<string, ScrollProperties> = new Map<string, ScrollProperties>();
 
   constructor() {
     this.scroll.pipe(debounceTime(100)).subscribe(this.handleScroll);
@@ -60,7 +62,7 @@ export class ScrollService  {
     if (!componentName || !this.handlerList.get(componentName)) {
       return;
     }
-    const { beforeCheckFunc, checkPassedFunc, element} = this.handlerList.get(componentName);
+    const { beforeCheckFunc, checkPassedFunc, element, scrollTriggerPercentage} = this.handlerList.get(componentName);
     // window.pageYoffset when browser doesn't calculate element.scrollTop (mostly safari)
     // document.documentElement.scrollTop and document.body.scrollTop are fallback values
     const currentScrollPos: number = element.scrollTop ||
@@ -71,7 +73,7 @@ export class ScrollService  {
 
     beforeCheckFunc();
     // scroll amount is greater than percentage of the page needed to trigger a reload.
-    if (currentScrollPos > totalScroll * .75) {
+    if (currentScrollPos > totalScroll * (scrollTriggerPercentage / 100)) {
       checkPassedFunc();
     }
   }
